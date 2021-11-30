@@ -45,6 +45,7 @@ public class RandomPlayer implements IPlayer, IAuto {
         int qn = s.getNumberOfPiecesPerColor(color);
         ArrayList<Point> pendingAmazons = new ArrayList<>();
         for (int q = 0; q < qn; q++) {
+            //desem on estan totes les fitxes
             pendingAmazons.add(s.getPiece(color, q));
         }
         // Iterem aleatòriament per les peces fins que trobem una que es pot moure.
