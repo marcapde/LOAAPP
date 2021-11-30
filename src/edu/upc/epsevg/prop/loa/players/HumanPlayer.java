@@ -7,6 +7,9 @@ import edu.upc.epsevg.prop.loa.Move;
 import java.awt.Point;
 import java.util.Random;
 
+/*
+*HOLAAAAA
+*/
 /**
  * Jugador humà de LOA
  * @author bernat
