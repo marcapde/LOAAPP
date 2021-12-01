@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * Jugador humà de LOA
  * @author bernat
  */
-public class loser1 implements IPlayer {
+public class loser1 implements IPlayer,IAuto {
 
     String name;
     CellType color;
@@ -23,6 +23,21 @@ public class loser1 implements IPlayer {
     private int numNodes;
     private int maxDepth;
 
+    public int[][] tablaPuntuacio = {
+        {3, 4, 5, 7, 7, 5, 4, 3},
+        {4, 6, 8,10,10, 8, 6, 4},
+        {5, 8,11,13,13,11, 8, 5},
+        {7,10,13,16,16,13,10, 7},
+        {7,10,13,16,16,13,10, 7},
+        {5, 8,11,13,13,11, 8, 5},
+        {4, 6, 8,10,10, 8, 6, 4},
+        {3, 4, 5, 7, 7, 5, 4, 3}
+    };
+    
+    
+    
+    
+    
     public loser1(String name) {
         this.name = name;
         numNodes = 0;
@@ -39,7 +54,7 @@ public class loser1 implements IPlayer {
     @Override
     public Move move(GameStatus s) {
         color = s.getCurrentPlayer();
-        return null;
+        return minimax(s,4);
     }
 
     /**
@@ -84,16 +99,17 @@ public class loser1 implements IPlayer {
         
         for (int i = 0; i < numFitxes; i++){
             Point fromAct = fitxesPos.remove(0);
+
             //suponemos que el remove actualiza las posiciones del array
             ArrayList<Point> movPosi = s.getMoves(fromAct);
             if(movPosi.size() > 0 ){
                 
                 for (int j=0;j<movPosi.size();j++){
-                    scopy = s;
+                    scopy = new GameStatus(s);
                     Point movAct = movPosi.remove(0);
                     scopy.movePiece(fromAct, movAct);
-                    int valorNou = movMin(scopy ,pprof-1,alpha,beta);
-                    
+                    int valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
+                 
                     if(valorNou > valor){
                         valor = valorNou;
                         bestFrom = fromAct;
@@ -103,15 +119,15 @@ public class loser1 implements IPlayer {
                 }        
             } 
         }//if (bestFrom.x == -100) return new Move(bestFrom,bestTo,0,maxDepth,SearchType.MINIMAX);
-        
+         System.out.println("ESTEM RETORNANT");
         return new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
     }
 
     /**
      * Función que nos devuelve el movimiento con mayor valor heurístico de todos los
      * movimientos estudiados.
-     * @param pt tablero resultante de poner una ficha en una determinada columna.
-     * @param lastcol columna en la que hemos puesto ficha para estudiar el tablero.
+     * @param ps tablero resultante de poner una ficha en una determinada columna.
+     * @param lastPoint columna en la que hemos puesto ficha para estudiar el tablero.
      * @param pprof número de niveles restantes que le queda al algoritmo por
      * analizar.
      * @param alpha variable que determina el alfa para realizar la poda alfa-beta.
@@ -119,29 +135,48 @@ public class loser1 implements IPlayer {
      * @return retorna el valor heurístico máximo entre todas las posibilidades
      * comprobadas.
      */
-    public int movMax(Tauler pt, int lastcol ,int pprof,int alpha,int beta){
-
-        if(pt.solucio(lastcol,colorNostre*-1)){
-            return -1000000;
-        }else if(pt.solucio(lastcol,colorNostre)){
-               return 1000000;
-        }else if (pprof == 0 || !(pt.espotmoure())){
-            return Heuristica(pt);
+    public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
+        if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
+           return -100000;
+        }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
+               return 100000;
+        }else if (pprof == 0 ){//peta
+            return Heuristica(ps);
         }
-
+        
+        maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
+        
         int value = Integer.MIN_VALUE;
-        for(int i = 0; i < 8; i++){
-            if(pt.movpossible(i)){
-
-                Tauler move = new Tauler(pt);
-                move.afegeix(i,colorNostre);
-                value = Math.max(value, movMin(move,i,pprof-1,alpha ,beta));
-                alpha = Math.max(value,alpha);
-                if(alpha>=beta)
-                {
-                    break;
-                }
-             }
+        
+        int numFitxes = ps.getNumberOfPiecesPerColor(color);
+        ArrayList<Point> fitxesPos = new ArrayList<>();
+        for (int i = 0; i < numFitxes; i++) {
+            //desem on estan totes les fitxes
+            fitxesPos.add(ps.getPiece(color, i));
+        }
+        
+       scopy = ps;
+        for(int i = 0; i < numFitxes; i++){
+            Point fromAct = fitxesPos.remove(0);
+            //suponemos que el remove actualiza las posiciones del array
+            ArrayList<Point> movPosi = ps.getMoves(fromAct);
+            if(movPosi.size() > 0 ){
+                for (int j=0;j<movPosi.size();j++){
+                    
+                    Point movAct = movPosi.remove(0);
+                    System.out.println("HOLAMAX1");
+                    ps.movePiece(fromAct, movAct);//Movemos la pieza
+                    System.out.println("HOLAMAX2");
+                    value = Math.max(value, movMin(ps, movAct , pprof -1,alpha,beta));//********Mirar parametros******
+                    alpha = Math.max(value,alpha);
+                    if(alpha>=beta)
+                    {
+                        break;
+                    }                    
+                    ps = scopy;
+                }   
+              
+            }
         }
         return value;
     }
@@ -149,8 +184,8 @@ public class loser1 implements IPlayer {
     /**
      * Función que nos devuelve el movimiento con menor valor heurístico de todos los
      * movimientos estudiados.
-     * @param pt tablero resultante de poner una ficha en una determinada columna.
-     * @param lastcol columna en la que hemos puesto ficha para estudiar el tablero.
+     * @param ps tablero resultante de poner una ficha en una determinada columna.
+     * @param lastPoint columna en la que hemos puesto ficha para estudiar el tablero.
      * @param pprof número de niveles restantes que le queda al algoritmo por
      * analizar.
      * @param alpha variable que determina el alfa para realizar la poda alfa-beta.
@@ -159,28 +194,91 @@ public class loser1 implements IPlayer {
      * comprobadas.
      */
 
-    public int movMin(Tauler pt,int lastcol, int pprof,int alpha, int beta){
-        if(pt.solucio(lastcol,colorNostre*-1)){
+    public int movMin(GameStatus ps,Point lastPoint, int pprof,int alpha, int beta){///Mirar parametros
+        if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
-        }else if(pt.solucio(lastcol,colorNostre)){
+        }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
                return 100000;
-        }else if (pprof == 0 || !(pt.espotmoure())){
-            return Heuristica(pt);
+        }else if (pprof == 0 ){
+            return Heuristica(ps);
         }
-
+        
+        
+        maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
+        
         int value = Integer.MAX_VALUE;
-        for(int i = 0; i < 8; i++){
-            if(pt.movpossible(i)){
-                Tauler move = new Tauler(pt);
-                move.afegeix(i, colorNostre*-1);
-                value = Math.min(value, movMax(move,i,pprof -1,alpha,beta));
-                beta = Math.min(value,beta);
-                if(alpha>=beta)
-                {
-                    break;
-                }
-             }
+        
+        CellType colorRival = CellType.opposite(color);
+        
+        int numFitxes = ps.getNumberOfPiecesPerColor(colorRival);
+        
+        ArrayList<Point> fitxesPos = new ArrayList<>();
+        for (int i = 0; i < numFitxes; i++) {
+            //desem on estan totes les fitxes
+            fitxesPos.add(ps.getPiece(colorRival, i));
+        }
+       
+        scopy = ps;
+        for(int i = 0; i < numFitxes; i++){
+            Point fromAct = fitxesPos.remove(0);
+            //suponemos que el remove actualiza las posiciones del array
+            ArrayList<Point> movPosi = ps.getMoves(fromAct);
+            
+            if(movPosi.size() > 0 ){
+                for (int j=0;j<movPosi.size();j++){
+                    
+                    Point movAct = movPosi.remove(0);
+                    ps.movePiece(fromAct, movAct);//Movemos la pieza
+                    System.out.println("HOLAMIN");
+                    value = Math.min(value, movMax(ps, movAct ,pprof -1,alpha,beta));
+                    
+                    beta = Math.min(value,beta);
+                    if(alpha>=beta)
+                    {
+                        break;
+                    }   
+                    ps = scopy;
+                }   
+            }
         }
         return value;
     }
+    
+    public int Heuristica(GameStatus ps){
+        int valorHeur = 0;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (ps.getPos(i,j) == color) {
+                    valorHeur += tablaPuntuacio[i][j];
+                } else if (ps.getPos(i,j) == CellType.opposite(color )) {
+                    valorHeur -= tablaPuntuacio[i][j];
+                }
+            }
+        }
+        return valorHeur;
+
+    }
 }
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
