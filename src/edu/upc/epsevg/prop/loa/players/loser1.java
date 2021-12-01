@@ -255,6 +255,7 @@ public class loser1 implements IPlayer,IAuto {
                 }
             }
         }
+        
         return valorHeur;
 
     }
