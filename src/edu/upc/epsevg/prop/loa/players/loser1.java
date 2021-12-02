@@ -54,7 +54,7 @@ public class loser1 implements IPlayer,IAuto {
     @Override
     public Move move(GameStatus s) {
         color = s.getCurrentPlayer();
-        return minimax(s,4);
+        return minimax(s,8);
     }
 
     /**
@@ -119,7 +119,7 @@ public class loser1 implements IPlayer,IAuto {
                 }        
             } 
         }//if (bestFrom.x == -100) return new Move(bestFrom,bestTo,0,maxDepth,SearchType.MINIMAX);
-         System.out.println("ESTEM RETORNANT");
+        
         return new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
     }
 
@@ -155,25 +155,25 @@ public class loser1 implements IPlayer,IAuto {
             fitxesPos.add(ps.getPiece(color, i));
         }
         
-       scopy = ps;
+       
         for(int i = 0; i < numFitxes; i++){
             Point fromAct = fitxesPos.remove(0);
             //suponemos que el remove actualiza las posiciones del array
             ArrayList<Point> movPosi = ps.getMoves(fromAct);
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
-                    
+                    GameStatus scopy2 = new GameStatus(ps);
                     Point movAct = movPosi.remove(0);
-                    System.out.println("HOLAMAX1");
-                    ps.movePiece(fromAct, movAct);//Movemos la pieza
                     System.out.println("HOLAMAX2");
-                    value = Math.max(value, movMin(ps, movAct , pprof -1,alpha,beta));//********Mirar parametros******
+                    scopy2.movePiece(fromAct, movAct);//Movemos la pieza
+                    System.out.println("HOLAMAX");
+                    value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));//********Mirar parametros******
                     alpha = Math.max(value,alpha);
                     if(alpha>=beta)
                     {
                         break;
                     }                    
-                    ps = scopy;
+                   
                 }   
               
             }
@@ -218,7 +218,7 @@ public class loser1 implements IPlayer,IAuto {
             fitxesPos.add(ps.getPiece(colorRival, i));
         }
        
-        scopy = ps;
+        
         for(int i = 0; i < numFitxes; i++){
             Point fromAct = fitxesPos.remove(0);
             //suponemos que el remove actualiza las posiciones del array
@@ -226,18 +226,17 @@ public class loser1 implements IPlayer,IAuto {
             
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
-                    
+                    GameStatus scopy2 = new GameStatus(ps);
                     Point movAct = movPosi.remove(0);
-                    ps.movePiece(fromAct, movAct);//Movemos la pieza
+                    scopy2.movePiece(fromAct, movAct);//Movemos la pieza
                     System.out.println("HOLAMIN");
-                    value = Math.min(value, movMax(ps, movAct ,pprof -1,alpha,beta));
+                    value = Math.min(value, movMax(scopy2, movAct ,pprof -1,alpha,beta));
                     
                     beta = Math.min(value,beta);
                     if(alpha>=beta)
                     {
                         break;
-                    }   
-                    ps = scopy;
+                    }                     
                 }   
             }
         }
@@ -255,31 +254,8 @@ public class loser1 implements IPlayer,IAuto {
                 }
             }
         }
-        
         return valorHeur;
 
     }
 }
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
 
