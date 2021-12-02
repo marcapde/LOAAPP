@@ -26,7 +26,7 @@ public class Game {
 //                IPlayer player2 = new RandomPlayer("Crazy Ivan");
 //                    IPlayer player1 = new RandomPlayer("Octopus");
                     IPlayer player2 = new loser1("mamapinga");         
-                new Board(player1 , player2, 400000, Level.EASY);
+                new Board(player1 , player2, 10, Level.DIFFICULT);
              }
         });
     }

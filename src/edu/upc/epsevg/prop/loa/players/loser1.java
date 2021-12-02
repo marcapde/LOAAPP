@@ -22,6 +22,8 @@ public class loser1 implements IPlayer,IAuto {
     private GameStatus scopy;
     private int numNodes;
     private int maxDepth;
+    private boolean solFound;
+    private boolean timeout;
 
     public int[][] tablaPuntuacio = {
         {3, 4, 5, 7, 7, 5, 4, 3},
@@ -54,7 +56,18 @@ public class loser1 implements IPlayer,IAuto {
     @Override
     public Move move(GameStatus s) {
         color = s.getCurrentPlayer();
-        return minimax(s,8);
+        Point firstMove= s.getPiece(color,0);
+        Point firstTo= s.getMoves(firstMove).remove(0);
+        Move res = new Move(firstMove,firstTo,0,0,SearchType.MINIMAX);
+        int i = 2;
+        solFound=false;
+        timeout=false;
+        while (!solFound && !timeout){
+            res = minimax(s,i);
+            i+=2;
+            maxDepth = i;
+        }
+        return res;
     }
 
     /**
@@ -65,6 +78,7 @@ public class loser1 implements IPlayer,IAuto {
     public void timeout() {
         // Bah! Humans do not enjoy timeouts, oh, poor beasts !
         System.out.println("Bah! You are so slow...");
+        timeout = true;
     }
 
     /**
@@ -136,15 +150,18 @@ public class loser1 implements IPlayer,IAuto {
      * comprobadas.
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
+        System.out.println("HOLAMAX");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
-               return 100000;
+            solFound = true;
+            return 100000;
+               
         }else if (pprof == 0 ){//peta
             return Heuristica(ps);
         }
         
-        maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
+        //maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
         
         int value = Integer.MIN_VALUE;
         
@@ -162,11 +179,13 @@ public class loser1 implements IPlayer,IAuto {
             ArrayList<Point> movPosi = ps.getMoves(fromAct);
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
-                    GameStatus scopy2 = new GameStatus(ps);
+                    ////////////////////////////////////////
+                    GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new?
+                    ////////////////////////////////////////
                     Point movAct = movPosi.remove(0);
-                    System.out.println("HOLAMAX2");
+                    //System.out.println("HOLAMAX2");
                     scopy2.movePiece(fromAct, movAct);//Movemos la pieza
-                    System.out.println("HOLAMAX");
+                    
                     value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));//********Mirar parametros******
                     alpha = Math.max(value,alpha);
                     if(alpha>=beta)
@@ -178,6 +197,7 @@ public class loser1 implements IPlayer,IAuto {
               
             }
         }
+       
         return value;
     }
 
@@ -195,10 +215,12 @@ public class loser1 implements IPlayer,IAuto {
      */
 
     public int movMin(GameStatus ps,Point lastPoint, int pprof,int alpha, int beta){///Mirar parametros
+        System.out.println("HOLAMIN");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
-               return 100000;
+            solFound = true;
+            return 100000;
         }else if (pprof == 0 ){
             return Heuristica(ps);
         }
@@ -229,7 +251,7 @@ public class loser1 implements IPlayer,IAuto {
                     GameStatus scopy2 = new GameStatus(ps);
                     Point movAct = movPosi.remove(0);
                     scopy2.movePiece(fromAct, movAct);//Movemos la pieza
-                    System.out.println("HOLAMIN");
+                    
                     value = Math.min(value, movMax(scopy2, movAct ,pprof -1,alpha,beta));
                     
                     beta = Math.min(value,beta);
@@ -240,6 +262,7 @@ public class loser1 implements IPlayer,IAuto {
                 }   
             }
         }
+        
         return value;
     }
     
