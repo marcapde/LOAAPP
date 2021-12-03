@@ -59,15 +59,19 @@ public class loser1 implements IPlayer,IAuto {
         Point firstMove= s.getPiece(color,0);
         Point firstTo= s.getMoves(firstMove).remove(0);
         Move res = new Move(firstMove,firstTo,0,0,SearchType.MINIMAX);
+        Move oldRes = res;
         int i = 2;
         solFound=false;
         timeout=false;
         while (!solFound && !timeout){
             res = minimax(s,i);
-            i+=2;
+            if(!timeout) oldRes = res;
+            else break;
+            i+=1;
             maxDepth = i;
         }
-        return res;
+        System.out.println("Profunditat:"+maxDepth);
+        return oldRes;
     }
 
     /**
@@ -123,14 +127,15 @@ public class loser1 implements IPlayer,IAuto {
                     Point movAct = movPosi.remove(0);
                     scopy.movePiece(fromAct, movAct);
                     int valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
-                 
+                    if (timeout) break;
                     if(valorNou > valor){
                         valor = valorNou;
                         bestFrom = fromAct;
                         bestTo = movAct;
                         
                     }
-                }        
+                } 
+                if (timeout) break;
             } 
         }//if (bestFrom.x == -100) return new Move(bestFrom,bestTo,0,maxDepth,SearchType.MINIMAX);
         
@@ -150,13 +155,14 @@ public class loser1 implements IPlayer,IAuto {
      * comprobadas.
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
-        System.out.println("HOLAMAX");
+        //System.out.println("HOLAMAX");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
             solFound = true;
             return 100000;
-               
+        }else if(timeout){
+            return Integer.MIN_VALUE;
         }else if (pprof == 0 ){//peta
             return Heuristica(ps);
         }
@@ -215,18 +221,20 @@ public class loser1 implements IPlayer,IAuto {
      */
 
     public int movMin(GameStatus ps,Point lastPoint, int pprof,int alpha, int beta){///Mirar parametros
-        System.out.println("HOLAMIN");
+        //System.out.println("HOLAMIN");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
             solFound = true;
             return 100000;
-        }else if (pprof == 0 ){
+        }else if(timeout){
+            return Integer.MIN_VALUE;
+        }else if (pprof == 0){
             return Heuristica(ps);
         }
         
         
-        maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
+        //maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
         
         int value = Integer.MAX_VALUE;
         
