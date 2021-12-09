@@ -22,7 +22,9 @@ public class loser1 implements IPlayer,IAuto {
     private GameStatus scopy;
     private int numNodes;
     private int maxDepth;
-
+    private boolean solFound;
+    private boolean timeout;
+    private int numJugades;
     public int[][] tablaPuntuacio = {
         {3, 4, 5, 7, 7, 5, 4, 3},
         {4, 6, 8,10,10, 8, 6, 4},
@@ -42,6 +44,7 @@ public class loser1 implements IPlayer,IAuto {
         this.name = name;
         numNodes = 0;
         maxDepth = 0;
+        numJugades = 0;
     }
 
     /**
@@ -54,7 +57,23 @@ public class loser1 implements IPlayer,IAuto {
     @Override
     public Move move(GameStatus s) {
         color = s.getCurrentPlayer();
-        return minimax(s,4);
+        Point firstMove= s.getPiece(color,0);
+        Point firstTo= s.getMoves(firstMove).remove(0);
+        Move res = new Move(firstMove,firstTo,0,0,SearchType.MINIMAX);
+        Move oldRes = res;
+        int i = 2;
+        solFound=false;
+        timeout=false;
+        while (!solFound && !timeout){
+            res = minimax(s,i);
+            if(!timeout) oldRes = res;
+            else break;
+            i+=1;
+            maxDepth = i;//cuando incrementar maxDepth????????
+        }
+        System.out.println("Profunditat:"+maxDepth);
+        System.out.println("Jugades:"+ ++numJugades);
+        return oldRes;
     }
 
     /**
@@ -65,6 +84,7 @@ public class loser1 implements IPlayer,IAuto {
     public void timeout() {
         // Bah! Humans do not enjoy timeouts, oh, poor beasts !
         System.out.println("Bah! You are so slow...");
+        timeout = true;
     }
 
     /**
@@ -74,7 +94,7 @@ public class loser1 implements IPlayer,IAuto {
      */
     @Override
     public String getName() {
-        return "Human(" + name + ")";
+        return "(" + name + ")";
     }
     
     
@@ -109,17 +129,18 @@ public class loser1 implements IPlayer,IAuto {
                     Point movAct = movPosi.remove(0);
                     scopy.movePiece(fromAct, movAct);
                     int valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
-                 
+                    if (timeout) break;
                     if(valorNou > valor){
                         valor = valorNou;
                         bestFrom = fromAct;
                         bestTo = movAct;
                         
                     }
-                }        
+                } 
+                if (timeout) break;
             } 
         }//if (bestFrom.x == -100) return new Move(bestFrom,bestTo,0,maxDepth,SearchType.MINIMAX);
-         System.out.println("ESTEM RETORNANT");
+        
         return new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
     }
 
@@ -136,15 +157,19 @@ public class loser1 implements IPlayer,IAuto {
      * comprobadas.
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
+        //System.out.println("HOLAMAX");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
-               return 100000;
+            solFound = true;
+            return 100000;
+        }else if(timeout){
+            return Integer.MIN_VALUE;
         }else if (pprof == 0 ){//peta
             return Heuristica(ps);
         }
         
-        maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
+        //maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
         
         int value = Integer.MIN_VALUE;
         
@@ -155,29 +180,32 @@ public class loser1 implements IPlayer,IAuto {
             fitxesPos.add(ps.getPiece(color, i));
         }
         
-       scopy = ps;
+       
         for(int i = 0; i < numFitxes; i++){
             Point fromAct = fitxesPos.remove(0);
             //suponemos que el remove actualiza las posiciones del array
             ArrayList<Point> movPosi = ps.getMoves(fromAct);
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
-                    
+                    ////////////////////////////////////////
+                    GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new?
+                    ////////////////////////////////////////
                     Point movAct = movPosi.remove(0);
-                    System.out.println("HOLAMAX1");
-                    ps.movePiece(fromAct, movAct);//Movemos la pieza
-                    System.out.println("HOLAMAX2");
-                    value = Math.max(value, movMin(ps, movAct , pprof -1,alpha,beta));//********Mirar parametros******
+                    //System.out.println("HOLAMAX2");
+                    scopy2.movePiece(fromAct, movAct);//Movemos la pieza
+                    
+                    value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));//********Mirar parametros******
                     alpha = Math.max(value,alpha);
                     if(alpha>=beta)
                     {
                         break;
                     }                    
-                    ps = scopy;
+                   
                 }   
               
             }
         }
+       
         return value;
     }
 
@@ -195,16 +223,20 @@ public class loser1 implements IPlayer,IAuto {
      */
 
     public int movMin(GameStatus ps,Point lastPoint, int pprof,int alpha, int beta){///Mirar parametros
+        //System.out.println("HOLAMIN");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
-               return 100000;
-        }else if (pprof == 0 ){
+            solFound = true;
+            return 100000;
+        }else if(timeout){
+            return Integer.MIN_VALUE;
+        }else if (pprof == 0){
             return Heuristica(ps);
         }
         
         
-        maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
+        //maxDepth = maxDepth + 1;//Si arribem a aquest punt, hem augmentat la profunditat.
         
         int value = Integer.MAX_VALUE;
         
@@ -218,7 +250,7 @@ public class loser1 implements IPlayer,IAuto {
             fitxesPos.add(ps.getPiece(colorRival, i));
         }
        
-        scopy = ps;
+        
         for(int i = 0; i < numFitxes; i++){
             Point fromAct = fitxesPos.remove(0);
             //suponemos que el remove actualiza las posiciones del array
@@ -226,26 +258,26 @@ public class loser1 implements IPlayer,IAuto {
             
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
-                    
+                    GameStatus scopy2 = new GameStatus(ps);
                     Point movAct = movPosi.remove(0);
-                    ps.movePiece(fromAct, movAct);//Movemos la pieza
-                    System.out.println("HOLAMIN");
-                    value = Math.min(value, movMax(ps, movAct ,pprof -1,alpha,beta));
+                    scopy2.movePiece(fromAct, movAct);//Movemos la pieza
+                    
+                    value = Math.min(value, movMax(scopy2, movAct ,pprof -1,alpha,beta));
                     
                     beta = Math.min(value,beta);
                     if(alpha>=beta)
                     {
                         break;
-                    }   
-                    ps = scopy;
+                    }                     
                 }   
             }
         }
+        
         return value;
     }
     
     public int Heuristica(GameStatus ps){
-        int valorHeur = 0;
+        int valorHeur = BlockHeur(ps);
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (ps.getPos(i,j) == color) {
@@ -257,6 +289,47 @@ public class loser1 implements IPlayer,IAuto {
         }
         return valorHeur;
 
+    }
+    public int BlockHeur(GameStatus ps){
+        int res = DistHeur(ps);
+        //conseguir array de caselles enemigues
+        CellType colorRival = CellType.opposite(color);
+        int numFitxes = ps.getNumberOfPiecesPerColor(colorRival);
+        
+        //ArrayList<Point> fitxesPos = new ArrayList<>();
+        for (int i = 0; i < numFitxes; i++) {
+            //desem on estan totes les fitxes
+            Point pos = (ps.getPiece(colorRival, i));
+            res -= 2 * ps.getMoves(pos).size();
+        }        
+        return res;
+        
+    }
+    public int DistHeur (GameStatus ps){
+        int res = 0;
+        int numFitxes = ps.getNumberOfPiecesPerColor(color);
+        
+        //ArrayList<Point> fitxesPos = new ArrayList<>();
+        for (int i = 0; i < numFitxes; i++) {
+            Point act = ps.getPiece(color, i);
+            for (int j=i+1;j<numFitxes;j++){
+                Point next = (ps.getPiece(color, j));
+                res -= getDistance(act,next);
+                //res -= 2 * ps.getMoves(pos).size();
+            }
+            
+        }        
+        return res/numFitxes;
+    }
+    private int getDistance(Point act, Point next){
+        int dist = 0;
+        //obtenir distancia per caselles
+//        int xAct = act.x;
+//        int yAct = act.y;
+//        int xNext = next.x;
+//        int yNext = next.y;
+        dist = Math.abs(act.x - next.x + (act.y-next.y)-1); 
+        return dist;        
     }
 }
 
@@ -279,6 +352,4 @@ public class loser1 implements IPlayer,IAuto {
     
     
     
-    
-
-
+  
