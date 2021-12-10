@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.HashMap;
 /**
  * Jugador humà de LOA
  * @author bernat
@@ -25,6 +26,14 @@ public class loser1 implements IPlayer,IAuto {
     private boolean solFound;
     private boolean timeout;
     private int numJugades;
+    public class tagHASH{
+        int id;
+        int heur;
+        int prof;//quants nivells hem avaluat per sota
+        Move best;
+    };
+    HashMap <Integer,tagHASH> mapa;
+    private long[][][] Zobrist ;
     public int[][] tablaPuntuacio = {
         {3, 4, 5, 7, 7, 5, 4, 3},
         {4, 6, 8,10,10, 8, 6, 4},
@@ -36,7 +45,16 @@ public class loser1 implements IPlayer,IAuto {
         {3, 4, 5, 7, 7, 5, 4, 3}
     };
     
-    
+    public void initializeHASH(){
+        Random r = new Random();
+        for (int i=0;i<8;i++){
+            for (int j=0;j<8;j++){
+                for (int k=0;k<2;k++){
+                    Zobrist [i][j][k]=r.nextInt();
+                }                    
+            }
+        }
+    }
     
     
     
@@ -45,6 +63,7 @@ public class loser1 implements IPlayer,IAuto {
         numNodes = 0;
         maxDepth = 0;
         numJugades = 0;
+        initializeHASH();
     }
 
     /**
@@ -56,6 +75,7 @@ public class loser1 implements IPlayer,IAuto {
      */
     @Override
     public Move move(GameStatus s) {
+        mapa = new HashMap<Integer,tagHASH>();
         color = s.getCurrentPlayer();
         Point firstMove= s.getPiece(color,0);
         Point firstTo= s.getMoves(firstMove).remove(0);
@@ -331,6 +351,12 @@ public class loser1 implements IPlayer,IAuto {
         dist = Math.abs(act.x - next.x + (act.y-next.y)-1); 
         return dist;        
     }
+    //algorithm steps:
+    //1.Al inici de la partida, generar una array de 12*64 
+    //
+    //
+    //
+    //
 }
 
 
