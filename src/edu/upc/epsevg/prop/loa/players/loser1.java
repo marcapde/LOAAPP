@@ -18,6 +18,9 @@ import java.util.HashMap;
  */
 public class loser1 implements IPlayer,IAuto {
 
+    /**
+     * Variables
+     */
     String name;
     CellType color;
     private GameStatus scopy;
@@ -32,7 +35,9 @@ public class loser1 implements IPlayer,IAuto {
         int prof;//quants nivells hem avaluat per sota
         Move best;
     };
+    
     HashMap <Integer,tagHASH> mapa;
+    
     private long[][][] Zobrist ;
     public int[][] tablaPuntuacio = {
         {3, 4, 5, 7, 7, 5, 4, 3},
@@ -45,12 +50,27 @@ public class loser1 implements IPlayer,IAuto {
         {3, 4, 5, 7, 7, 5, 4, 3}
     };
     
+    
+    /**
+     * Funciones
+     */
     public void initializeHASH(){
         Random r = new Random();
         for (int i=0;i<8;i++){
             for (int j=0;j<8;j++){
                 for (int k=0;k<2;k++){
                     Zobrist [i][j][k]=r.nextInt();
+                    //(k=0 == white)(k=1 == black)
+                                 
+                    if((k==0) && (i!=0 && i!=7) && (j==0 || j == 7)){
+                        Zobrist[i][j][k]=(Zobrist[i][j][k]^k);
+                    }
+
+
+                    if((k==1) && (j!=0 && j!=7) && (i==0 || i == 7)){
+                         Zobrist[i][j][k]=(Zobrist[i][j][k]^k);
+                    }
+                    
                 }                    
             }
         }
@@ -75,8 +95,12 @@ public class loser1 implements IPlayer,IAuto {
      */
     @Override
     public Move move(GameStatus s) {
+       color = s.getCurrentPlayer();
+       return minmaxIDS(s); 
+    }
+    
+    public Move minmaxIDS(GameStatus s){
         mapa = new HashMap<Integer,tagHASH>();
-        color = s.getCurrentPlayer();
         Point firstMove= s.getPiece(color,0);
         Point firstTo= s.getMoves(firstMove).remove(0);
         Move res = new Move(firstMove,firstTo,0,0,SearchType.MINIMAX);
@@ -86,13 +110,23 @@ public class loser1 implements IPlayer,IAuto {
         timeout=false;
         while (!solFound && !timeout){
             res = minimax(s,i);
-            if(!timeout) oldRes = res;
+            if(!timeout){
+               oldRes = res;
+            }
             else break;
             i+=1;
             maxDepth = i;//cuando incrementar maxDepth????????
         }
         System.out.println("Profunditat:"+maxDepth);
         System.out.println("Jugades:"+ ++numJugades);
+        
+        //Codi zobritz hashing
+            Point fr=oldRes.getFrom();
+            Point to=oldRes.getTo();
+            int k= CellType.toColor01(color);
+            Zobrist[fr.x][fr.y][k] = Zobrist[fr.x][fr.y][k]^k; //Quitem de on mourem
+            Zobrist[to.x][to.y][k] = Zobrist[to.x][to.y][k]^k; //El posem a on es mou
+        //Fi codi zobritz hashing
         return oldRes;
     }
 
