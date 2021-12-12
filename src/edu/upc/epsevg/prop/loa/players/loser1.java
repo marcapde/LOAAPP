@@ -30,10 +30,12 @@ public class loser1 implements IPlayer,IAuto {
     private boolean timeout;
     private int numJugades;
     public class tagHASH{
-        int id;
-        int heur;
-        int prof;//quants nivells hem avaluat per sota
-        Move best;
+        public int id;
+        public int heur;
+        public int prof;//quants nivells hem avaluat per sota
+        public Move best;
+        public void tagHash(){
+        }
     };
     
     HashMap <Integer,tagHASH> mapa;
@@ -212,11 +214,11 @@ public class loser1 implements IPlayer,IAuto {
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
         //System.out.println("HOLAMAX");
-        tagHASH th;
+        tagHASH th = new tagHASH();
         //th.best(Move());
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
             
-            int x = AddToHASH(ps);
+            int x = AddToHASH(ps,th);
             return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
             solFound = true;
