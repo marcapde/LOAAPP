@@ -178,14 +178,20 @@ public class loser1 implements IPlayer,IAuto {
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
         //System.out.println("HOLAMAX");
+        tagHASH th;
+        //th.best(Move());
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
-           return -100000;
+            
+            int x = AddToHASH(ps);
+            return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
             solFound = true;
+            //afegir tauler a hash
             return 100000;
         }else if(timeout){
             return Integer.MIN_VALUE;
         }else if (pprof == 0 ){//peta
+            //afegir tauler a hash
             return Heuristica(ps);
         }
         
@@ -213,6 +219,7 @@ public class loser1 implements IPlayer,IAuto {
                     Point movAct = movPosi.remove(0);
                     //System.out.println("HOLAMAX2");
                     scopy2.movePiece(fromAct, movAct);//Movemos la pieza
+                    //actualitzar hash
                     
                     value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));//********Mirar parametros******
                     alpha = Math.max(value,alpha);
@@ -357,6 +364,35 @@ public class loser1 implements IPlayer,IAuto {
     //
     //
     //
+    private int AddToHASH(GameStatus ps,tagHASH th){
+        int added = 0;
+        int hTauler = GetHashTauler(ps);
+        tagHASH other = mapa.get(hTauler);
+        if (other == null){
+            added = 1;
+            mapa.put(hTauler,th);
+        }else if(th.prof > other.prof || 
+                (th.prof == other.prof && th.heur > other.heur)){
+            added = 1;
+            mapa.put(hTauler,th);            
+        } 
+        return added;
+    }
+    private int GetHashTauler(GameStatus ps){
+        int h = 0;
+        int numFitxes = ps.getNumberOfPiecesPerColor(color);        
+        for (int i = 0; i < numFitxes; i++) {
+            Point pos = ps.getPiece(color, i);
+            h^=Zobrist[pos.x][pos.y][CellType.toColor01(color)];
+        }
+        CellType oppo = CellType.opposite(color);
+       numFitxes = ps.getNumberOfPiecesPerColor(oppo);
+        for (int i = 0; i < numFitxes; i++) {
+            Point pos = ps.getPiece(oppo, i);
+            h^=Zobrist[pos.x][pos.y][CellType.toColor01(oppo)];
+        }
+        return h;
+    }
 }
 
 
