@@ -195,30 +195,47 @@ public class loser1 implements IPlayer,IAuto {
        
         int valorNou = Integer.MIN_VALUE;
         for (int i = 0; i < numFitxes; i++){
-            Point fromAct = fitxesPos.remove(0);
-
+            //comencem pel millor, en cas de que existeixi
+            int h = GetHashTauler(s);
+            Point fromAct;
+            if (mapa.containsKey(h) && i == 0 && mapa.get(h) != null){
+                fromAct = mapa.get(h).best.getFrom();
+                fitxesPos.remove(fromAct);
+            }else{
+                fromAct = fitxesPos.remove(0);
+            }              
             //suponemos que el remove actualiza las posiciones del array
             ArrayList<Point> movPosi = s.getMoves(fromAct);
             
             if(movPosi.size() > 0 ){
                 
-                for (int j=0;j<movPosi.size();j++){
+                for (int j=0;movPosi.size()>0;j++){
                     scopy = new GameStatus(s);
-                    Point movAct = movPosi.remove(0);
+                    Point movAct;
+                    if (j==0 && mapa.containsKey(h)){
+                        movAct = mapa.get(h).best.getTo();
+//                        tagHASH th = mapa.get(h);
+//                        alpha = th.heur;
+//                        bestFrom = th.best.getFrom();
+//                        bestTo = th.best.getTo();
+                    }else{
+                        movAct = movPosi.remove(0);
+                    }
+                    
                     scopy.movePiece(fromAct, movAct);
                     
-                    int xx= GetHashTauler(scopy);
-                    if(mapa.containsKey(xx) && mapa.get(xx)!=null){
-                        tagHASH th =  mapa.get(xx);
-                            alpha=th.heur;
-                        
-                        
-                            bestFrom = th.best.getFrom();
-                            bestTo = th.best.getTo();
-                            heurAux = valorNou;
-                            
-                        if (timeout) break;
-                    }
+                    //int xx= GetHashTauler(scopy);
+//                    if(mapa.containsKey(xx) && mapa.get(xx)!=null){
+//                        tagHASH th =  mapa.get(xx);
+//                            alpha=th.heur;
+//                        
+//                        
+//                            bestFrom = th.best.getFrom();
+//                            bestTo = th.best.getTo();
+//                            heurAux = valorNou;
+//                            
+//                        if (timeout) break;
+//                    }
                     valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
                     if (timeout) break;
                     if(valorNou > alpha){
@@ -280,37 +297,52 @@ public class loser1 implements IPlayer,IAuto {
         
         Move mv=new Move(lastPoint,lastPoint,0,0,SearchType.MINIMAX_IDS);
         for(int i = 0; i < numFitxes; i++){
-            Point fromAct = fitxesPos.remove(0);
+            //la h no caldria que la calcules a cada iteració, es podria fer eficient
+            int h = GetHashTauler(ps);
+            Point fromAct;
+            if (mapa.containsKey(h) && i == 0){
+                fromAct = mapa.get(h).best.getFrom();
+                fitxesPos.remove(fromAct);
+            }else{
+                fromAct = fitxesPos.remove(0);
+            } 
             //suponemos que el remove actualiza las posiciones del array
-            ArrayList<Point> movPosi = ps.getMoves(fromAct);
-            
-            
+            ArrayList<Point> movPosi = ps.getMoves(fromAct);  
             if(movPosi.size() > 0 ){
-                for (int j=0;j<movPosi.size();j++){
- 
+                for (int j=0;0<movPosi.size();j++){
+                    Point movAct;
+                    if (j==0 && mapa.containsKey(h) && mapa.get(h) != null){
+                        movAct = mapa.get(h).best.getTo();
+//                        tagHASH th = mapa.get(h);
+//                        alpha = th.heur;
+//                        bestFrom = th.best.getFrom();
+//                        bestTo = th.best.getTo();
+                    }else{
+                        movAct = movPosi.remove(0);
+                    }
                     ////////////////////////////////////////
                     GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new? No, no es pot
                     ////////////////////////////////////////
-                        int x = GetHashTauler(scopy2);
-                        if(mapa.containsKey(x) && mapa.get(x)!=null){
-                            tagHASH th = mapa.get(x);
-                            if(movPosi.contains(th.best.getTo())){
-                                alpha=th.heur;
-                                mv = th.best;
-                                movPosi.remove(th.best.getTo());
-                            }
-                            scopy2.movePiece(th.best.getFrom(),th.best.getTo()); 
+//                        int x = GetHashTauler(scopy2);
+//                        if(j == 0 && mapa.containsKey(x) && mapa.get(x)!=null ){
+//                            tagHASH th = mapa.get(x);
+//                            if(movPosi.contains(th.best.getTo())){
+//                                alpha=th.heur;
+//                                mv = th.best;
+//                                movPosi.remove(th.best.getTo());
+//                            }
+                            //scopy2.movePiece(th.best.getFrom(),th.best.getTo()); 
 
-                            value = Math.max(value, movMin(scopy2,th.best.getTo(), pprof -1,alpha,beta));
-                        }
-                        else{
-                            Point movAct = movPosi.remove(0);
+                            //value = Math.max(value, movMin(scopy2,th.best.getTo(), pprof -1,alpha,beta));
+                        //}
+                        //else{
+                            //movAct = movPosi.remove(0);
                             scopy2.movePiece(fromAct, movAct); 
                             value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));
                             if(value>alpha){
                                 mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
                             }
-                        }
+                        //}
                         //System.out.println("HOLAMAX2");
                         //Movemos la pieza
                         //actualitzar hash
