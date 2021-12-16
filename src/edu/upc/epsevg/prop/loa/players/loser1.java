@@ -29,13 +29,22 @@ public class loser1 implements IPlayer,IAuto {
     private boolean solFound;
     private boolean timeout;
     private int numJugades;
+    private int heurAux;
+    
+    
     public class tagHASH{
         public int id;
         public int heur;
         public int prof;//quants nivells hem avaluat per sota
         public Move best;
-        public void tagHash(){
+
+        private tagHASH(int pid, int pheur, int pprof, Move pbest) {
+            id = pid;
+            heur = pheur;
+            prof = pprof;
+            best = pbest;
         }
+     
     };
     
     HashMap <Integer,tagHASH> mapa;
@@ -56,6 +65,11 @@ public class loser1 implements IPlayer,IAuto {
     /**
      * Funciones
      */
+    
+    
+    
+    
+    
     public void initializeHASH(){
         Random r = new Random();
         for (int i=0;i<8;i++){
@@ -107,13 +121,16 @@ public class loser1 implements IPlayer,IAuto {
         Point firstTo= s.getMoves(firstMove).remove(0);
         Move res = new Move(firstMove,firstTo,0,0,SearchType.MINIMAX);
         Move oldRes = res;
+        int oldHeur=0;
         int i = 2;
         solFound=false;
         timeout=false;
+        
         while (!solFound && !timeout){
             res = minimax(s,i);
             if(!timeout){
                oldRes = res;
+               oldHeur = heurAux;
             }
             else break;
             i+=1;
@@ -128,6 +145,12 @@ public class loser1 implements IPlayer,IAuto {
             int k= CellType.toColor01(color);
             Zobrist[fr.x][fr.y][k] = Zobrist[fr.x][fr.y][k]^k; //Quitem de on mourem
             Zobrist[to.x][to.y][k] = Zobrist[to.x][to.y][k]^k; //El posem a on es mou
+            
+            
+            tagHASH th = new tagHASH(GetHashTauler(s),oldHeur,maxDepth,oldRes);
+            int a = AddToHASH(s,th);            
+
+            
         //Fi codi zobritz hashing
         return oldRes;
     }
@@ -172,32 +195,41 @@ public class loser1 implements IPlayer,IAuto {
             fitxesPos.add(s.getPiece(color, i));
         }
        
-        
+        int valorNou = Integer.MIN_VALUE;
         for (int i = 0; i < numFitxes; i++){
             Point fromAct = fitxesPos.remove(0);
 
             //suponemos que el remove actualiza las posiciones del array
             ArrayList<Point> movPosi = s.getMoves(fromAct);
+            
+            
+            
             if(movPosi.size() > 0 ){
                 
                 for (int j=0;j<movPosi.size();j++){
                     scopy = new GameStatus(s);
                     Point movAct = movPosi.remove(0);
                     scopy.movePiece(fromAct, movAct);
-                    int valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
+                    int xx= GetHashTauler(scopy);
+                    if(mapa.containsKey(xx) && mapa.get(xx)!=null){
+                        valorNou = mapa.get(xx).heur;
+                    }else
+                        valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
                     if (timeout) break;
                     if(valorNou > valor){
                         valor = valorNou;
                         bestFrom = fromAct;
                         bestTo = movAct;
-                        
+                        heurAux = valorNou;
                     }
                 } 
                 if (timeout) break;
             } 
-        }//if (bestFrom.x == -100) return new Move(bestFrom,bestTo,0,maxDepth,SearchType.MINIMAX);
-        
-        return new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
+        }
+        Move movement = new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
+        //Zobrist
+        //Fi ZObrist
+        return movement;
     }
 
     /**
@@ -214,11 +246,9 @@ public class loser1 implements IPlayer,IAuto {
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
         //System.out.println("HOLAMAX");
-        tagHASH th = new tagHASH();
         //th.best(Move());
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
-            
-            int x = AddToHASH(ps,th);
+//            int x = AddToHASH(ps,th);
             return -100000;
         }else if(ps.isGameOver() && ps.GetWinner() == color){//Ganamos
             solFound = true;
@@ -247,23 +277,38 @@ public class loser1 implements IPlayer,IAuto {
             Point fromAct = fitxesPos.remove(0);
             //suponemos que el remove actualiza las posiciones del array
             ArrayList<Point> movPosi = ps.getMoves(fromAct);
+            
+            
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
+ 
                     ////////////////////////////////////////
-                    GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new?
+                    GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new? No, no es pot
                     ////////////////////////////////////////
-                    Point movAct = movPosi.remove(0);
-                    //System.out.println("HOLAMAX2");
-                    scopy2.movePiece(fromAct, movAct);//Movemos la pieza
-                    //actualitzar hash
-                    
-                    value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));//********Mirar parametros******
-                    alpha = Math.max(value,alpha);
-                    if(alpha>=beta)
-                    {
-                        break;
-                    }                    
-                   
+                        int x = GetHashTauler(scopy2);
+                        if(mapa.containsKey(x) && mapa.get(x)!=null){
+                            tagHASH th = mapa.get(x);
+                            if(movPosi.contains(th.best.getTo())){
+                                alpha=th.heur;
+                                movPosi.remove(th.best.getTo());
+                            }
+                            value = Math.max(value, movMin(scopy2,th.best.getTo(), pprof -1,alpha,beta));
+                        }
+                        else{
+                            Point movAct = movPosi.remove(0);
+                            scopy2.movePiece(fromAct, movAct); 
+                            value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));
+                        }
+                        //System.out.println("HOLAMAX2");
+                        //Movemos la pieza
+                        //actualitzar hash
+
+                       /********Mirar parametros******/
+                        alpha = Math.max(value,alpha);
+                        if(alpha>=beta)
+                        {
+                            break;
+                        } 
                 }   
               
             }
@@ -322,11 +367,24 @@ public class loser1 implements IPlayer,IAuto {
             if(movPosi.size() > 0 ){
                 for (int j=0;j<movPosi.size();j++){
                     GameStatus scopy2 = new GameStatus(ps);
-                    Point movAct = movPosi.remove(0);
-                    scopy2.movePiece(fromAct, movAct);//Movemos la pieza
                     
-                    value = Math.min(value, movMax(scopy2, movAct ,pprof -1,alpha,beta));
                     
+                    //Zobrist
+                    int x = GetHashTauler(scopy2);
+                        if(mapa.containsKey(x) && mapa.get(x)!=null){
+                            tagHASH th = mapa.get(x);
+                            if(movPosi.contains(th.best.getTo())){
+                               
+                               movPosi.remove(th.best.getTo());
+                            }
+                            value = Math.min(value, movMax(scopy2, th.best.getTo() ,pprof -1,alpha,beta));
+                        }else{
+                            Point movAct = movPosi.remove(0);
+                            scopy2.movePiece(fromAct, movAct);//Movemos la pieza
+
+                            value = Math.min(value, movMax(scopy2, movAct ,pprof -1,alpha,beta));
+                        }
+                         //Fi codi Zobrist
                     beta = Math.min(value,beta);
                     if(alpha>=beta)
                     {
@@ -386,20 +444,13 @@ public class loser1 implements IPlayer,IAuto {
     }
     private int getDistance(Point act, Point next){
         int dist = 0;
-        //obtenir distancia per caselles
-//        int xAct = act.x;
-//        int yAct = act.y;
-//        int xNext = next.x;
-//        int yNext = next.y;
         dist = Math.abs(act.x - next.x + (act.y-next.y)-1); 
         return dist;        
     }
+    
+    
     //algorithm steps:
     //1.Al inici de la partida, generar una array de 12*64 
-    //
-    //
-    //
-    //
     private int AddToHASH(GameStatus ps,tagHASH th){
         int added = 0;
         int hTauler = GetHashTauler(ps);
@@ -414,6 +465,7 @@ public class loser1 implements IPlayer,IAuto {
         } 
         return added;
     }
+    
     private int GetHashTauler(GameStatus ps){
         int h = 0;
         int numFitxes = ps.getNumberOfPiecesPerColor(color);        
