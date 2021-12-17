@@ -25,8 +25,8 @@ public class Game {
                 //IPlayer player1 = new RandomPlayer("Crazy Chris");
 //                IPlayer player2 = new RandomPlayer("Crazy Ivan");
 //                    IPlayer player1 = new RandomPlayer("Octopus");
-                    IPlayer player2 = new loser1("mamapinga");
-                    IPlayer player1 = new loser1("pingamama");
+                    IPlayer player1 = new RandomPlayer("mamapinga");
+                    IPlayer player2 = new Zobrist_hash("pingamama");
                 new Board(player1 , player2, 10, Level.DIFFICULT);
              }
         });
