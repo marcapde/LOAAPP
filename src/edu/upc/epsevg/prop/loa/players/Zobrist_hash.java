@@ -30,15 +30,17 @@ public class Zobrist_hash implements IPlayer,IAuto {
     private boolean timeout;
     private int numJugades;
     private int heurAux;
+    private SearchType cerca;
+
     
     
     public class tagHASH{
-        public int id;
+        public long id;
         public int heur;
         public int prof;//quants nivells hem avaluat per sota
         public Move best;
 
-        private tagHASH(int pid, int pheur, int pprof, Move pbest) {
+        private tagHASH(long pid, int pheur, int pprof, Move pbest) {
             id = pid;
             heur = pheur;
             prof = pprof;
@@ -47,7 +49,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
      
     };
     
-    HashMap <Integer,tagHASH> mapa;
+    HashMap <Long,tagHASH> mapa;
     
     private long[][][] Zobrist = new long [8][8][2];
     public int[][] tablaPuntuacio = {
@@ -93,12 +95,13 @@ public class Zobrist_hash implements IPlayer,IAuto {
     }
     
     
-    public Zobrist_hash(String name) {
+    public Zobrist_hash(String name,SearchType pcerda) {
         this.name = name;
         numNodes = 0;
         maxDepth = 0;
         numJugades = 0;
         initializeHASH();
+        cerca = pcerda;
     }
 
     /**
@@ -111,14 +114,17 @@ public class Zobrist_hash implements IPlayer,IAuto {
     @Override
     public Move move(GameStatus s) {
        color = s.getCurrentPlayer();
-       return minmaxIDS(s); 
+       if (cerca == SearchType.MINIMAX_IDS){
+           return minmaxIDS(s);
+       }
+       return minimax(s,8);// profinfitat default = 8
     }
     
     public Move minmaxIDS(GameStatus s){
-        mapa = new HashMap<Integer,tagHASH>();
+        mapa = new HashMap<Long,tagHASH>();
         Point firstMove= s.getPiece(color,0);
         Point firstTo= s.getMoves(firstMove).remove(0);
-        Move res = new Move(firstMove,firstTo,0,0,SearchType.MINIMAX_IDS);
+        Move res = new Move(firstMove,firstTo,0,0,cerca);
         Move oldRes = res;
         int oldHeur=0;
         int i = 2;
@@ -223,6 +229,9 @@ public class Zobrist_hash implements IPlayer,IAuto {
                         movAct = movPosi.remove(0);
                     }                    
                     scopy.movePiece(fromAct, movAct);
+                    //actualitza hash
+                    long hash = actualizaHash(h,fromAct,movAct,s);
+                    
                     
                     //int xx= GetHashTauler(scopy);
 //                    if(mapa.containsKey(xx) && mapa.get(xx)!=null){
@@ -236,7 +245,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
 //                            
 //                        if (timeout) break;
 //                    }
-                    valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta);
+                    valorNou = movMin(scopy, movAct ,pprof-1, alpha, beta,hash);
                     if (timeout) break;
                     if(valorNou > alpha){
                         alpha = valorNou;
@@ -252,8 +261,8 @@ public class Zobrist_hash implements IPlayer,IAuto {
         Move movement = new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
         //Zobrist
         
-        tagHASH th = new tagHASH(GetHashTauler(s),heurAux,maxDepth,movement);
-        AddToHASH(s,th);            
+        tagHASH th = new tagHASH(h,heurAux,maxDepth,movement);
+        AddToHASH(s,th,h);            
 
         
         //Fi ZObrist
@@ -272,7 +281,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
      * @return retorna el valor heurístico máximo entre todas las posibilidades
      * comprobadas.
      */
-    public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta){
+    public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta, long h){
         //System.out.println("HOLAMAX");
         //th.best(Move());
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
@@ -303,7 +312,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
         Move mv=new Move(lastPoint,lastPoint,0,0,SearchType.MINIMAX_IDS);
         Point fromAct = null;
         Point movAct = null;
-        int h = GetHashTauler(ps);
+        //long h = hash;
         //ens assegurem de que si el mapa conte el tauler, que sigui el correcte
         if (mapa.containsKey(h) && mapa.get(h) != null  
                 && fitxesPos.contains(mapa.get(h).best.getFrom())
@@ -351,8 +360,9 @@ public class Zobrist_hash implements IPlayer,IAuto {
                         //}
                         //else{
                             //movAct = movPosi.remove(0);
-                            scopy2.movePiece(fromAct, movAct); 
-                            value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta));
+                            scopy2.movePiece(fromAct, movAct);
+                            long haux = actualizaHash(h, fromAct, movAct, ps);
+                            value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta,haux));
                             if(value>alpha){
                                 mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
                                 alpha = value;
@@ -372,8 +382,8 @@ public class Zobrist_hash implements IPlayer,IAuto {
               
             }
         }
-        tagHASH th = new tagHASH(GetHashTauler(ps),alpha,maxDepth,mv);
-        int a = AddToHASH(ps,th);
+        tagHASH th = new tagHASH(h,alpha,maxDepth,mv);
+        int a = AddToHASH(ps,th,h);
         return alpha;
     }
 
@@ -390,7 +400,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
      * comprobadas.
      */
 
-    public int movMin(GameStatus ps,Point lastPoint, int pprof,int alpha, int beta){///Mirar parametros
+    public int movMin(GameStatus ps,Point lastPoint, int pprof,int alpha, int beta,long hash){///Mirar parametros
         //System.out.println("HOLAMIN");
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
            return -100000;
@@ -441,8 +451,8 @@ public class Zobrist_hash implements IPlayer,IAuto {
 //                        }else{
                             Point movAct = movPosi.remove(0);
                             scopy2.movePiece(fromAct, movAct);//Movemos la pieza
-
-                            value = Math.min(value, movMax(scopy2, movAct ,pprof-1,alpha,beta));
+                            long haux = actualizaHash(hash, fromAct, movAct, ps);
+                            value = Math.min(value, movMax(scopy2, movAct ,pprof-1,alpha,beta,haux));
 //                        }
                          //Fi codi Zobrist
                     beta = Math.min(value,beta);
@@ -458,9 +468,9 @@ public class Zobrist_hash implements IPlayer,IAuto {
     }
         //algorithm steps:
     //1.Al inici de la partida, generar una array de 12*64 
-    private int AddToHASH(GameStatus ps,tagHASH th){
+    private int AddToHASH(GameStatus ps,tagHASH th,long hash){
         int added = 0;
-        int hTauler = GetHashTauler(ps);
+        long hTauler = hash;
         tagHASH other = mapa.get(hTauler);
         if (other == null){
             added = 1;
@@ -488,7 +498,18 @@ public class Zobrist_hash implements IPlayer,IAuto {
         }
         return h;
     }
-    
+    private long actualizaHash(long h, Point fromAct, Point movAct, GameStatus ps) {
+        long hash = h;
+        if (ps.getPos(movAct) == CellType.opposite(color)){
+            //cas de que mengem al rival
+            hash ^= Zobrist[movAct.x][movAct.y][CellType.toColor01(CellType.opposite(color))];
+        }
+        //treiem el from
+        hash ^= Zobrist[fromAct.x][fromAct.y][CellType.toColor01(color)];
+        //afegim el to
+        hash ^= Zobrist[movAct.x][movAct.y][CellType.toColor01(color)];
+        return hash;
+    }
     
     
     
