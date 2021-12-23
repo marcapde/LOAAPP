@@ -113,6 +113,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
      */
     @Override
     public Move move(GameStatus s) {
+        numNodes=0;
        color = s.getCurrentPlayer();
        if (cerca == SearchType.MINIMAX_IDS){
            return minmaxIDS(s);
@@ -541,7 +542,8 @@ public class Zobrist_hash implements IPlayer,IAuto {
     
     
     public int Heuristica(GameStatus ps){
-        int valorHeur = BlockHeur(ps) + DistHeur(ps);
+        numNodes++;
+        int valorHeur = -10*Math.abs(ps.getNumberOfPiecesPerColor(color)-ps.getNumberOfPiecesPerColor(CellType.opposite(color)));
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (ps.getPos(i,j) == color) {
@@ -551,7 +553,7 @@ public class Zobrist_hash implements IPlayer,IAuto {
                 }
             }
         }
-        return valorHeur;
+        return valorHeur + BlockHeur(ps) + 3*DistHeur(ps);
 
     }
     public int BlockHeur(GameStatus ps){

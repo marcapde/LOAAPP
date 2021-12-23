@@ -16,7 +16,7 @@ import java.util.HashMap;
  * Jugador humà de LOA
  * @author bernat
  */
-public class Zobrist_min implements IPlayer,IAuto {
+public class Zobrist_fast_min implements IPlayer,IAuto {
 
     /**
      * Variables
@@ -110,7 +110,7 @@ public class Zobrist_min implements IPlayer,IAuto {
     }
     
     
-    public Zobrist_min(String name,SearchType pcerda) {
+    public Zobrist_fast_min(String name,SearchType pcerda) {
         this.name = name;
         numNodes = 0;
         maxDepth = 0;
@@ -138,9 +138,9 @@ public class Zobrist_min implements IPlayer,IAuto {
     
     public Move minmaxIDS(GameStatus s){
         mapa = new HashMap<Long,tagHASH>();
-        Point firstMove= s.getPiece(color,0);
-        Point firstTo= s.getMoves(firstMove).remove(0);
-        Move res = new Move(firstMove,firstTo,0,0,cerca);
+        Point firstMove= null;//s.getPiece(color,0);
+        Point firstTo= null;//s.getMoves(firstMove).remove(0);
+        Move res = null;//new Move(firstMove,firstTo,0,0,cerca);
         Move oldRes = res;
         int oldHeur=0;
         int i = 2;
@@ -164,8 +164,7 @@ public class Zobrist_min implements IPlayer,IAuto {
             Point fr=oldRes.getFrom();
             Point to=oldRes.getTo();
             int k= CellType.toColor01(color);
- 
-
+           //ja afegira el node a la hash la funcio minmax en cas de necesari
             
         //Fi codi zobritz hashing
         return oldRes;
@@ -334,6 +333,7 @@ public class Zobrist_min implements IPlayer,IAuto {
         if (mapa.containsKey(h) && mapa.get(h) != null && mapa.get(h).isMax
                 && fitxesPos.contains(mapa.get(h).bestMax.getFrom())
                 && ps.getMoves(mapa.get(h).bestMax.getFrom()).contains(mapa.get(h).bestMax.getTo())){
+            if (pprof==1)return mapa.get(h).heurMax;
             fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMax.getTo();
@@ -361,9 +361,6 @@ public class Zobrist_min implements IPlayer,IAuto {
                             scopy2.movePiece(fromAct, movAct);
                             long haux = actualizaHash(h, fromAct, movAct, ps);
                             value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta,haux));
-                            if(beta<=value){
-                                
-                            }
                             if(value>alpha){
                                 mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
                                 alpha = value;
@@ -426,6 +423,7 @@ public class Zobrist_min implements IPlayer,IAuto {
         if (mapa.containsKey(h) && mapa.get(h) != null && mapa.get(h).isMin 
                 && fitxesPos.contains(mapa.get(h).bestMin.getFrom())
                 && ps.getMoves(mapa.get(h).bestMin.getFrom()).contains(mapa.get(h).bestMin.getTo())){
+            if (pprof<=2)return mapa.get(h).heurMin;
             fromAct = mapa.get(h).bestMin.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMin.getTo();
@@ -450,17 +448,14 @@ public class Zobrist_min implements IPlayer,IAuto {
                     GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new? No, no es pot
                     ////////////////////////////////////////
 //                        
-                        scopy2.movePiece(fromAct, movAct);
-                        long haux = actualizaHash(h, fromAct, movAct, ps);
-                        value = Math.min(value, movMax(scopy2, movAct , pprof -1,alpha,beta,haux));
-                        if(value<beta){
-                            mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
-                            beta = value;
-                        }
-                        if (value<= alpha){
-                            break;
-                        }
-                            if(alpha>=beta)
+                            scopy2.movePiece(fromAct, movAct);
+                            long haux = actualizaHash(h, fromAct, movAct, ps);
+                            value = Math.min(value, movMax(scopy2, movAct , pprof -1,alpha,beta,haux));
+                            if(value<beta){
+                                mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
+                                beta = value;
+                            }
+                        if(alpha>=beta)
                         {
                             break;
                         } 

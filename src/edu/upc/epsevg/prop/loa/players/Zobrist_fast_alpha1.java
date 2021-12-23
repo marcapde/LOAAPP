@@ -16,7 +16,7 @@ import java.util.HashMap;
  * Jugador humà de LOA
  * @author bernat
  */
-public class Zobrist_min implements IPlayer,IAuto {
+public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
 
     /**
      * Variables
@@ -31,6 +31,7 @@ public class Zobrist_min implements IPlayer,IAuto {
     private int numJugades;
     private int heurAux;
     private SearchType cerca;
+    private int zobristlooked;
 
     
     
@@ -110,7 +111,7 @@ public class Zobrist_min implements IPlayer,IAuto {
     }
     
     
-    public Zobrist_min(String name,SearchType pcerda) {
+    public Zobrist_fast_alpha1(String name,SearchType pcerda) {
         this.name = name;
         numNodes = 0;
         maxDepth = 0;
@@ -130,14 +131,25 @@ public class Zobrist_min implements IPlayer,IAuto {
     public Move move(GameStatus s) {
        numNodes = 0;
        color = s.getCurrentPlayer();
+       zobristlooked = 0;
        if (cerca == SearchType.MINIMAX_IDS){
-           return minmaxIDS(s);
+          Move millor = minmaxIDS(s);// profinfitat default = 8
+          System.out.println("mida mapa:"+mapa.size());
+          System.out.println("Tauler repetits observats:" + zobristlooked);
+          System.out.println("---------------------------------");
+          return millor;
        }
-       return minimax(s,8);// profinfitat default = 8
+       
+       Move millor = minimax(s,8);// profinfitat default = 8
+       System.out.println("mida mapa:"+mapa.size());
+       System.out.println("Tauler repetits observats:" + zobristlooked);
+       System.out.println("---------------------------------");
+       return millor;
     }
     
     public Move minmaxIDS(GameStatus s){
-        mapa = new HashMap<Long,tagHASH>();
+        //provem a crear mapa enlloc de cada jugada, cada 2
+        if (numJugades%2 == 0) mapa = new HashMap<Long,tagHASH>();
         Point firstMove= s.getPiece(color,0);
         Point firstTo= s.getMoves(firstMove).remove(0);
         Move res = new Move(firstMove,firstTo,0,0,cerca);
@@ -217,9 +229,11 @@ public class Zobrist_min implements IPlayer,IAuto {
         if (mapa.containsKey(h) && mapa.get(h) != null && mapa.get(h).isMax
                 && fitxesPos.contains(mapa.get(h).bestMax.getFrom())
                 && s.getMoves(mapa.get(h).bestMax.getFrom()).contains(mapa.get(h).bestMax.getTo())){
-            fromAct = mapa.get(h).bestMax.getFrom();
+            zobristlooked++;
+            bestFrom = fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
-            movAct = mapa.get(h).bestMax.getTo();
+            bestTo = movAct = mapa.get(h).bestMax.getTo();
+            alpha= mapa.get(h).heurMax;
         }
         
         int valorNou = Integer.MIN_VALUE;
@@ -278,7 +292,7 @@ public class Zobrist_min implements IPlayer,IAuto {
         Move movement = new Move(bestFrom,bestTo,numNodes,maxDepth,SearchType.MINIMAX);
         //Zobrist
         //com el valor de min esta a false el ad ho ignorara així que posem qualsevol valor
-        tagHASH th = new tagHASH(h,true,heurAux,maxDepth,movement,false,heurAux,maxDepth,movement);
+        tagHASH th = new tagHASH(h,true,alpha,maxDepth,movement,false,alpha,maxDepth,movement);
         AddToHASH(s,th,h);            
 
         
@@ -299,6 +313,7 @@ public class Zobrist_min implements IPlayer,IAuto {
      * comprobadas.
      */
     public int movMax(GameStatus ps, Point lastPoint ,int pprof,int alpha,int beta, long h){
+        //System.out.println(alpha);
         //System.out.println("HOLAMAX");
         //th.best(Move());
         if(ps.isGameOver() && ps.GetWinner() != color){ //Perdem
@@ -334,9 +349,13 @@ public class Zobrist_min implements IPlayer,IAuto {
         if (mapa.containsKey(h) && mapa.get(h) != null && mapa.get(h).isMax
                 && fitxesPos.contains(mapa.get(h).bestMax.getFrom())
                 && ps.getMoves(mapa.get(h).bestMax.getFrom()).contains(mapa.get(h).bestMax.getTo())){
+            zobristlooked++;
+            if (pprof<=2  || mapa.get(h).profMax > pprof)return mapa.get(h).heurMax;
             fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
-            movAct = mapa.get(h).bestMax.getTo();
+            movAct = mapa.get(h).bestMax.getTo();            
+            if(beta<mapa.get(h).heurMax)beta= mapa.get(h).heurMax;
+            mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
         }
         for(int i = 0; i < numFitxes; i++){
             //la h no caldria que la calcules a cada iteració, es podria fer eficient
@@ -361,9 +380,9 @@ public class Zobrist_min implements IPlayer,IAuto {
                             scopy2.movePiece(fromAct, movAct);
                             long haux = actualizaHash(h, fromAct, movAct, ps);
                             value = Math.max(value, movMin(scopy2, movAct , pprof -1,alpha,beta,haux));
-                            if(beta<=value){
-                                
-                            }
+//                            if (beta<= value){
+//                                
+//                            }
                             if(value>alpha){
                                 mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
                                 alpha = value;
@@ -426,9 +445,13 @@ public class Zobrist_min implements IPlayer,IAuto {
         if (mapa.containsKey(h) && mapa.get(h) != null && mapa.get(h).isMin 
                 && fitxesPos.contains(mapa.get(h).bestMin.getFrom())
                 && ps.getMoves(mapa.get(h).bestMin.getFrom()).contains(mapa.get(h).bestMin.getTo())){
+            zobristlooked++;
+            if (pprof<=2 || mapa.get(h).profMax > pprof)return mapa.get(h).heurMin;
             fromAct = mapa.get(h).bestMin.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMin.getTo();
+            if(alpha<mapa.get(h).heurMin)alpha= mapa.get(h).heurMin;
+            mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
         }
         for(int i = 0; i < numFitxes; i++){
             //la h no caldria que la calcules a cada iteració, es podria fer eficient
@@ -450,17 +473,14 @@ public class Zobrist_min implements IPlayer,IAuto {
                     GameStatus scopy2 = new GameStatus(ps);//es pot fer sense new? No, no es pot
                     ////////////////////////////////////////
 //                        
-                        scopy2.movePiece(fromAct, movAct);
-                        long haux = actualizaHash(h, fromAct, movAct, ps);
-                        value = Math.min(value, movMax(scopy2, movAct , pprof -1,alpha,beta,haux));
-                        if(value<beta){
-                            mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
-                            beta = value;
-                        }
-                        if (value<= alpha){
-                            break;
-                        }
-                            if(alpha>=beta)
+                            scopy2.movePiece(fromAct, movAct);
+                            long haux = actualizaHash(h, fromAct, movAct, ps);
+                            value = Math.min(value, movMax(scopy2, movAct , pprof -1,alpha,beta,haux));
+                            if(value<beta){
+                                mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
+                                beta = value;
+                            }
+                        if(alpha>=beta)
                         {
                             break;
                         } 
@@ -662,10 +682,9 @@ public class Zobrist_min implements IPlayer,IAuto {
     private int getDistance(Point act, Point next){
         int dist = 0;
         dist = Math.abs(act.x - next.x + (act.y-next.y)-1); 
+        //if(dist>2) dist += 2;
         return dist;        
-    }
-    
-    
+    }  
 
 }
 
