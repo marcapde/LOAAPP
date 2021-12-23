@@ -233,7 +233,7 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
             bestFrom = fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
             bestTo = movAct = mapa.get(h).bestMax.getTo();
-            alpha= mapa.get(h).heurMax;
+            //alpha= mapa.get(h).heurMax;
         }
         
         int valorNou = Integer.MIN_VALUE;
@@ -354,7 +354,7 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
             fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMax.getTo();            
-            if(beta<mapa.get(h).heurMax)beta= mapa.get(h).heurMax;
+            //if(beta<mapa.get(h).heurMax)beta= mapa.get(h).heurMax;
             mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
         }
         for(int i = 0; i < numFitxes; i++){
@@ -446,11 +446,11 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
                 && fitxesPos.contains(mapa.get(h).bestMin.getFrom())
                 && ps.getMoves(mapa.get(h).bestMin.getFrom()).contains(mapa.get(h).bestMin.getTo())){
             zobristlooked++;
-            if (pprof<=2 || mapa.get(h).profMax > pprof)return mapa.get(h).heurMin;
+            if (pprof<=2 || mapa.get(h).profMin > pprof)return mapa.get(h).heurMin;
             fromAct = mapa.get(h).bestMin.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMin.getTo();
-            if(alpha<mapa.get(h).heurMin)alpha= mapa.get(h).heurMin;
+            //if(alpha<mapa.get(h).heurMin)alpha= mapa.get(h).heurMin;
             mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
         }
         for(int i = 0; i < numFitxes; i++){

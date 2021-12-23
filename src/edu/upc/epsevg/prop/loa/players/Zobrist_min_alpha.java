@@ -339,7 +339,7 @@ public class Zobrist_min_alpha implements IPlayer,IAuto {
             fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMax.getTo();
-            if(beta<mapa.get(h).heurMax)beta= mapa.get(h).heurMax;
+            if(beta>mapa.get(h).heurMax)beta= mapa.get(h).heurMax;
             mv = new Move(fromAct,movAct,numNodes,maxDepth,SearchType.MINIMAX_IDS);
         }
         for(int i = 0; i < numFitxes; i++){

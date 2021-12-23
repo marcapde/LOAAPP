@@ -570,13 +570,9 @@ public class Loser1 implements IPlayer,IAuto {
     
     
     
-    
-    
-    
-    
-    
-    
-    
+
+
+
     
     
     
