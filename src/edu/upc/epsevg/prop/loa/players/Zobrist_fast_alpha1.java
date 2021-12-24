@@ -32,7 +32,8 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
     private int heurAux;
     private SearchType cerca;
     private int zobristlooked;
-
+    private boolean profFixed = true;
+    private int depthLimit;
     
     
     public class tagHASH{
@@ -111,13 +112,20 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
     }
     
     
-    public Zobrist_fast_alpha1(String name,SearchType pcerda) {
+    public Zobrist_fast_alpha1(String name,SearchType pcerda, boolean profFixada,
+            int maxProf) {
         this.name = name;
         numNodes = 0;
         maxDepth = 0;
         numJugades = 0;
         initializeHASH();
         cerca = pcerda;
+        profFixed = profFixada;
+        if (profFixed) 
+            depthLimit = Integer.MAX_VALUE;
+        else 
+            depthLimit = maxProf;
+        
     }
 
     /**
@@ -156,10 +164,11 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
         Move oldRes = res;
         int oldHeur=0;
         int i = 2;
+        if (depthLimit == 1) i = 1;
         solFound=false;
         timeout=false;
         
-        while (!solFound && !timeout){
+        while (!solFound && !timeout && i <= depthLimit ){
             res = minimax(s,i);
             if(!timeout){
                oldRes = res;
@@ -192,6 +201,7 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
         // Bah! Humans do not enjoy timeouts, oh, poor beasts !
         System.out.println("Bah! You are so slow...");
         timeout = true;
+        profFixed = false;
     }
 
     /**
@@ -350,7 +360,8 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
                 && fitxesPos.contains(mapa.get(h).bestMax.getFrom())
                 && ps.getMoves(mapa.get(h).bestMax.getFrom()).contains(mapa.get(h).bestMax.getTo())){
             zobristlooked++;
-            if (pprof<=2  || mapa.get(h).profMax > pprof)return mapa.get(h).heurMax;
+            if (!profFixed &&(pprof<=2 
+                    || mapa.get(h).profMax > pprof))return mapa.get(h).heurMax;
             fromAct = mapa.get(h).bestMax.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMax.getTo();            
@@ -446,7 +457,8 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
                 && fitxesPos.contains(mapa.get(h).bestMin.getFrom())
                 && ps.getMoves(mapa.get(h).bestMin.getFrom()).contains(mapa.get(h).bestMin.getTo())){
             zobristlooked++;
-            if (pprof<=2 || mapa.get(h).profMin > pprof)return mapa.get(h).heurMin;
+            if (!profFixed && (pprof<=2 
+                    || mapa.get(h).profMin > pprof))return mapa.get(h).heurMin;
             fromAct = mapa.get(h).bestMin.getFrom();
             fitxesPos.remove(fromAct);
             movAct = mapa.get(h).bestMin.getTo();
@@ -645,7 +657,7 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
                 }
             }
         }
-        return valorHeur + 2*BlockHeur(ps) + 4*DistHeur(ps);
+        return valorHeur + BlockHeur(ps) + 2*DistHeur(ps);
 
     }
     public int BlockHeur(GameStatus ps){
