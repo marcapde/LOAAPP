@@ -25,8 +25,8 @@ public class Game {
                 //IPlayer player1 = new RandomPlayer("Crazy Chris");
 //                IPlayer player2 = new RandomPlayer("Crazy Ivan");
 //                    IPlayer player1 = new RandomPlayer("Octopus");
-                    IPlayer player1 = new Zobrist_fast_alpha1("fast++",SearchType.MINIMAX_IDS,false,1);
-                    IPlayer player2 = new MCCloudPlayer ();
+                IPlayer player2 = new Zobrist_fast_alpha1("fast++",SearchType.MINIMAX_IDS,true,6);
+                IPlayer player1 = new MCCloudPlayer();
                 new Board(player1 , player2, 120, Level.DIFFICULT);
              }
         });
