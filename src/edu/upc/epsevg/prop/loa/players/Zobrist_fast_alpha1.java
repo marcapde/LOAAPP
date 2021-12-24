@@ -158,8 +158,8 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
     public Move minmaxIDS(GameStatus s){
         //provem a crear mapa enlloc de cada jugada, cada 2
         if (numJugades%2 == 0) mapa = new HashMap<Long,tagHASH>();
-        Point firstMove= s.getPiece(color,0);
-        Point firstTo= s.getMoves(firstMove).remove(0);
+        Point firstMove= null;
+        Point firstTo= null;
         Move res = new Move(firstMove,firstTo,0,0,cerca);
         Move oldRes = res;
         int oldHeur=0;
