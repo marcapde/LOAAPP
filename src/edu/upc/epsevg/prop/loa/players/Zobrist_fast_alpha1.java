@@ -121,7 +121,7 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
         initializeHASH();
         cerca = pcerda;
         profFixed = profFixada;
-        if (profFixed) 
+        if (!profFixed) 
             depthLimit = Integer.MAX_VALUE;
         else 
             depthLimit = maxProf;
@@ -164,7 +164,7 @@ public class Zobrist_fast_alpha1 implements IPlayer,IAuto {
         Move oldRes = res;
         int oldHeur=0;
         int i = 2;
-        if (depthLimit == 1) i = 1;
+        if (profFixed && depthLimit == 1) i = 1;
         solFound=false;
         timeout=false;
         
